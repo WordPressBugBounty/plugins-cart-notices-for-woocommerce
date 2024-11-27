@@ -145,26 +145,25 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         'can_be_disabled' => true
     );
     function __construct() {
-        add_action('BeRocket_framework_init_plugin', array($this, 'init_conditions'));
         $this->post_name = 'br_notice';
         $this->post_settings = array(
-            'label' => __( 'Notice', 'cart-notices-for-woocommerce' ),
+            'label' => 'Notice',
             'labels' => array(
-                'name'               => __( 'Notices', 'cart-notices-for-woocommerce' ),
-                'singular_name'      => __( 'Notice', 'cart-notices-for-woocommerce' ),
-                'menu_name'          => _x( 'Notices', 'Admin menu name', 'cart-notices-for-woocommerce' ),
-                'add_new'            => __( 'Add Notice', 'cart-notices-for-woocommerce' ),
-                'add_new_item'       => __( 'Add New Notice', 'cart-notices-for-woocommerce' ),
-                'edit'               => __( 'Edit', 'cart-notices-for-woocommerce' ),
-                'edit_item'          => __( 'Edit Notice', 'cart-notices-for-woocommerce' ),
-                'new_item'           => __( 'New Notice', 'cart-notices-for-woocommerce' ),
-                'view'               => __( 'View Notices', 'cart-notices-for-woocommerce' ),
-                'view_item'          => __( 'View Notice', 'cart-notices-for-woocommerce' ),
-                'search_items'       => __( 'Search Notices', 'cart-notices-for-woocommerce' ),
-                'not_found'          => __( 'No Notices found', 'cart-notices-for-woocommerce' ),
-                'not_found_in_trash' => __( 'No Notices found in trash', 'cart-notices-for-woocommerce' ),
+                'name'               => 'Notices',
+                'singular_name'      => 'Notice',
+                'menu_name'          => 'Notices',
+                'add_new'            => 'Add Notice',
+                'add_new_item'       => 'Add New Notice',
+                'edit'               => 'Edit',
+                'edit_item'          => 'Edit Notice',
+                'new_item'           => 'New Notice',
+                'view'               => 'View Notices',
+                'view_item'          => 'View Notice',
+                'search_items'       => 'Search Notices',
+                'not_found'          => 'No Notices found',
+                'not_found_in_trash' => 'No Notices found in trash',
             ),
-            'description'     => __( 'This is where you can add new notices that you can add to products.', 'cart-notices-for-woocommerce' ),
+            'description'     => 'This is where you can add new notices that you can add to products.',
             'public'          => true,
             'show_ui'         => true,
             'capability_type' => 'post',
@@ -205,9 +204,6 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
             'referer'       => '',
             'use_tax'       => '0'
         );
-        $this->add_meta_box('conditions', __( 'Conditions', 'cart-notices-for-woocommerce' ));
-        $this->add_meta_box('minmax_settings', __( 'Cart Notice Settings', 'cart-notices-for-woocommerce' ));
-        $this->add_meta_box('description', __( 'Description', 'cart-notices-for-woocommerce' ), false, 'side');
         parent::__construct();
 
         add_filter('brfr_'.$this->hook_name.'_price_var', array($this, 'price_var'), 20, 4);
@@ -215,17 +211,36 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         add_filter('brfr_'.$this->hook_name.'_products_var', array($this, 'products_var'), 20, 4);
         add_filter('brfr_'.$this->hook_name.'_category_var', array($this, 'category_var'), 20, 4);
     }
-    public function init_conditions($info) {
-        if( $info['id'] == 12 ) {
-            $this->conditions = new BeRocket_conditions_cart_notice($this->post_name.'[condition]', $this->hook_name, array(
-                'condition_product',
-                'condition_product_sale',
-                'condition_product_bestsellers',
-                'condition_product_price',
-                'condition_product_stockstatus',
-                'condition_product_totalsales',
-            ));
-        }
+    function init_translation() {
+        $this->post_settings['label'] = __( 'Notice', 'cart-notices-for-woocommerce' );
+        $this->post_settings['labels'] = array(
+            'name'               => __( 'Notices', 'cart-notices-for-woocommerce' ),
+            'singular_name'      => __( 'Notice', 'cart-notices-for-woocommerce' ),
+            'menu_name'          => _x( 'Notices', 'Admin menu name', 'cart-notices-for-woocommerce' ),
+            'add_new'            => __( 'Add Notice', 'cart-notices-for-woocommerce' ),
+            'add_new_item'       => __( 'Add New Notice', 'cart-notices-for-woocommerce' ),
+            'edit'               => __( 'Edit', 'cart-notices-for-woocommerce' ),
+            'edit_item'          => __( 'Edit Notice', 'cart-notices-for-woocommerce' ),
+            'new_item'           => __( 'New Notice', 'cart-notices-for-woocommerce' ),
+            'view'               => __( 'View Notices', 'cart-notices-for-woocommerce' ),
+            'view_item'          => __( 'View Notice', 'cart-notices-for-woocommerce' ),
+            'search_items'       => __( 'Search Notices', 'cart-notices-for-woocommerce' ),
+            'not_found'          => __( 'No Notices found', 'cart-notices-for-woocommerce' ),
+            'not_found_in_trash' => __( 'No Notices found in trash', 'cart-notices-for-woocommerce' ),
+        );
+        $this->post_settings['description'] = __( 'This is where you can add new notices that you can add to products.', 'cart-notices-for-woocommerce' );
+        $this->conditions = new BeRocket_conditions_cart_notice($this->post_name.'[condition]', $this->hook_name, array(
+            'condition_product',
+            'condition_product_sale',
+            'condition_product_bestsellers',
+            'condition_product_price',
+            'condition_product_stockstatus',
+            'condition_product_totalsales',
+        ));
+
+        $this->add_meta_box('conditions', __( 'Conditions', 'cart-notices-for-woocommerce' ));
+        $this->add_meta_box('minmax_settings', __( 'Cart Notice Settings', 'cart-notices-for-woocommerce' ));
+        $this->add_meta_box('description', __( 'Description', 'cart-notices-for-woocommerce' ), false, 'side');
     }
     public function price_var($post) {
         return '<tr><th>'.__('Variables', 'cart-notices-for-woocommerce').'</th>
