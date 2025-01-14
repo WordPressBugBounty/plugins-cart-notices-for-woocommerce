@@ -849,7 +849,9 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         echo '<style>.berocket_cart_notice p{margin:0!important}</style>';
     }
     public function divi_extensions_init() {
-        include_once dirname( __FILE__ ) . '/divi/includes/CartNoticeExtension.php';
+        if( class_exists('DiviExtension') ) {
+            include_once dirname( __FILE__ ) . '/divi/includes/CartNoticeExtension.php';
+        }
     }
 }
 
