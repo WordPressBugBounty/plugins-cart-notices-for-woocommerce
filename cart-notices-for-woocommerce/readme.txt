@@ -1,8 +1,8 @@
 === Cart Notices for WooCommerce ===
 Plugin Name: Cart Notices for WooCommerce
-Contributors: dholovnia, berocket
+Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
-Tags: cart, notices, message, cart notices, notifications, cart notifications, show notice, checkout notice, checkout message, deadline notices, deadline message, products cart, product notice, show notice in cart, notice for product, shopping cart notice, shopping cart message, conversion optimized cart, cart promo, cart alerts, ad in cart, berocket, berocket cart notices for woocommerce, berocket cart messages for woocommerce
+Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
 Tested up to: 6.7
 Stable tag: 3.6.1
