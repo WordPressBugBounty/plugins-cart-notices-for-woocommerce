@@ -4,8 +4,8 @@ Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
 Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
-Tested up to: 6.7
-Stable tag: 3.6.1
+Tested up to: 6.8
+Stable tag: 3.6.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -89,6 +89,10 @@ You can try this plugin's admin side [here](https://berocket.com/product/woocomm
 ---
 
 == Changelog ==
+
+= 3.6.2 =
+* Enhancement - Compatibility version: Wordpress 6.8 and WooCommerce 9.8
+* Enhancement - New plugin framework 
 
 = 3.6.1 =
 * Enhancement - Compatibility version: WooCommerce 9.5
