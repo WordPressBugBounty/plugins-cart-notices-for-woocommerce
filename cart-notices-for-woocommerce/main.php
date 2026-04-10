@@ -8,6 +8,7 @@ foreach (glob(__DIR__ . "/includes/*.php") as $filename)
     include_once($filename);
 }
 include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
+include_once(plugin_dir_path( __FILE__ ) . "includes/admin/funnels.php");
 
 /**
  * Class BeRocket_cart_notices
