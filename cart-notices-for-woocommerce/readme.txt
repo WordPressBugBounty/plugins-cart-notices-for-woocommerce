@@ -4,8 +4,8 @@ Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
 Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
-Tested up to: 6.9.3
-Stable tag: 3.6.2.4
+Tested up to: 6.9.4
+Stable tag: 3.6.2.5
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -14,6 +14,11 @@ Display on cart page notices based on products and product categories in cart, c
 == Description ==
 
 Cart Notices for WooCommerce plugin display on cart page notices based on products and product categories in cart, cart cost, current day and time, customer referrer. Add messages anywhere on your site shortcodes are allowed. Add button to your message to encourage your customers to perform the desired action.
+
+= 🚀 Spring Premium Days is LIVE! =
+**Save 30%** on Pro features across BeRocket plugins. 
+*Boost your store performance and UX with our exclusive seasonal offer.*
+🌿 Improve your store today. [**Limited time offer!**](https://berocket.com/plugins/?utm_source=free_plugin&utm_medium=wporg&utm_campaign=spring_2026&utm_content=top_ad_cta&utm_term=cart_notices)
 
 = Features: =
 &#9989; Native WYSIWYG editor for notices
@@ -89,6 +94,10 @@ You can try this plugin's admin side [here](https://berocket.com/product/woocomm
 ---
 
 == Changelog ==
+
+= 3.6.2.5 =
+* Enhancement - Compatibility version: Wordpress 6.9.4 and WooCommerce 10.6.2
+
 
 = 3.6.2.4 =
 * Enhancement - Compatibility with other BeRocket plugins
