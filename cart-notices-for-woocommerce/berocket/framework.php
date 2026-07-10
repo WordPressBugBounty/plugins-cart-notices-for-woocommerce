@@ -37,8 +37,8 @@ if( ! class_exists( 'BeRocket_Framework' ) ) {
     include_once( ABSPATH . 'wp-admin/includes/plugin.php' );
     load_plugin_textdomain('BeRocket_domain', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/');
     class BeRocket_Framework {
-        public static $framework_version = '3.0.5.2';
-        public $plugin_framework_version = '3.0.5.2';
+        public static $framework_version = '3.0.6';
+        public $plugin_framework_version = '3.0.6';
         public $licenses_current = array('free');
         public static $settings_name = '';
         public $addons;
@@ -1197,7 +1197,7 @@ if( ! class_exists( 'BeRocket_Framework' ) ) {
             if( ! is_array($new_option) ) {
                 $new_option = array();
             }
-            if( empty($new_option['fontawesome_frontend_version']) ) {
+            if( ! isset($new_option['fontawesome_frontend_version']) ) {
                 $option = $option_func('berocket_framework_option_global');
                 if( is_array($option) ) {
                     $new_option = array_merge($new_option, $option);

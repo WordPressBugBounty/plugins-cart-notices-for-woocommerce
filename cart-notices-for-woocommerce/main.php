@@ -365,7 +365,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
 
         $notices_list = $this->get_notice_list();
         foreach($notices_list as $notice_id => $notice) {
-            $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'" style="display:none;">'.$notice.'</div>';
+            $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'">'.$notice.'</div>';
             wc_add_notice($notice_text, 'notice');
         }
     }
