@@ -1,0 +1,11 @@
+{
+  "advanced": {
+    "borders": { "default": "notice.decoration.border" },
+    "box_shadow": { "default": "notice.decoration.boxShadow" },
+    "fonts": { "title": "notice.decoration.font" },
+    "admin_label": "module.meta.adminLabel",
+    "background": "notice.decoration.background",
+    "margin_padding": "notice.decoration.spacing",
+    "module": "module.advanced.htmlAttributes"
+  }
+}

@@ -98,6 +98,18 @@ class BeRocket_cart_notices extends BeRocket_Framework {
             add_action('wp_footer', array($this, 'wp_footer'));
             add_filter ( 'BeRocket_updater_menu_order_custom_post', array($this, 'menu_order_custom_post') );
             add_action( 'divi_extensions_init', array($this, 'divi_extensions_init') );
+            add_action( 'after_setup_theme', array($this, 'divi5_initialize'), 20 );
+        }
+    }
+    public function divi5_initialize() {
+        if( ! function_exists('et_builder_d5_enabled') || ! et_builder_d5_enabled() ) {
+            return;
+        }
+
+        $divi5_integration = plugin_dir_path( __FILE__ ) . 'divi5/includes/Integration.php';
+        if( file_exists($divi5_integration) ) {
+            require_once $divi5_integration;
+            BRCN_Divi5_Integration::init();
         }
     }
     function wc_notices_page_check($return) {
@@ -850,7 +862,8 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         echo '<style>.berocket_cart_notice p{margin:0!important}</style>';
     }
     public function divi_extensions_init() {
-        if( class_exists('DiviExtension') ) {
+        $is_divi5 = function_exists('et_builder_d5_enabled') && et_builder_d5_enabled();
+        if( class_exists('DiviExtension') && ! $is_divi5 ) {
             include_once dirname( __FILE__ ) . '/divi/includes/CartNoticeExtension.php';
         }
     }

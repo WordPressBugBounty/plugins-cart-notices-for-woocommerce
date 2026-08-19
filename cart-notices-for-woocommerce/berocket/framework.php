@@ -118,10 +118,6 @@ if( ! class_exists( 'BeRocket_Framework' ) ) {
                 add_action( 'admin_enqueue_scripts', array( $this->cc, 'admin_enqueue_scripts' ) );
                 add_action( 'berocket_enqueue_media', array( $this, 'wp_enqueue_media' ) );
 
-                add_action( 'wp_ajax_br_' . $this->cc->info[ 'plugin_name' ] . '_settings_save', array(
-                    $this->cc,
-                    'save_settings'
-                ) );
                 add_filter( 'plugin_row_meta', array( $this->cc, 'plugin_row_meta' ), 10, 2 );
                 add_filter( 'is_berocket_settings_page', array( $this->cc, 'is_settings_page' ) );
 
@@ -640,7 +636,7 @@ if( ! class_exists( 'BeRocket_Framework' ) ) {
         public function display_admin_settings( $tabs_info = array(), $data = array(), $setup_style = array() ) {
 			$plugin_info = get_plugin_data( $this->cc->info[ 'plugin_file' ] );
             global $wp;
-            $settings_url = add_query_arg( NULL, NULL );
+            $settings_url = add_query_arg( array() );
             $settings_url = esc_url_raw($settings_url);
             $def_setup_style = array(
                 'settings_url'    => $settings_url,
