@@ -1,0 +1,62 @@
+.berocket_cart_notice_cta_layout {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+}
+.berocket_cart_notice_cta_layout .berocket_cart_notice_content {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+.berocket_cart_notice_cta_layout .berocket_cart_notice_content p {
+    margin: 0 !important;
+}
+.berocket_cart_notice_cta {
+    align-items: center;
+    background: #fff !important;
+    border: 1px solid rgba(0, 0, 0, .15);
+    color: #252525 !important;
+    display: inline-flex;
+    float: none !important;
+    margin: 0;
+    vertical-align: baseline;
+}
+.berocket_cart_notice_cta--outline {
+    background: transparent !important;
+    border: 1px solid currentColor;
+    color: inherit !important;
+}
+.berocket_cart_notice_cta--text {
+    background: transparent !important;
+    border: 0;
+    box-shadow: none;
+    color: inherit !important;
+    padding: 0 !important;
+    text-decoration: underline;
+}
+.berocket_cart_notice_cta--full {
+    display: block;
+    float: none !important;
+    margin-left: 0;
+    margin-top: .75em;
+    text-align: center;
+    width: 100%;
+}
+.berocket_cart_notice_cta_layout--full {
+    display: block;
+}
+.berocket_cart_notice_progress {
+    margin-top: .75em;
+    width: 100%;
+}
+.berocket_cart_notice_progress_track {
+    border-radius: 999px;
+    display: block;
+    height: 8px;
+    overflow: hidden;
+}
+.berocket_cart_notice_progress_fill {
+    display: block;
+    height: 100%;
+    transition: width .2s ease;
+}

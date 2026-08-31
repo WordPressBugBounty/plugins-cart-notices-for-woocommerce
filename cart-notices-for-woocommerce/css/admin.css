@@ -22,6 +22,21 @@
 .berocket_days_of_week td label {
     white-space: nowrap;
 }
+.br_framework_settings .br_notice_cta_url {
+    width: 520px;
+    max-width: 100%;
+}
+.br_framework_settings .br_notice_progress_settings {
+    display: none;
+}
+.br_framework_settings .framework-form-table.berocket_framework_menu_schedule > tbody > tr > td > .br_field p {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+.br_framework_settings .framework-form-table.berocket_framework_menu_schedule > tbody > tr > td > .br_field .br_notice_campaign_schedule_clear.tiny-button {
+    margin-top: 1.5em !important;
+    margin-bottom: 0 !important;
+}
 .br_framework_settings .br_notice_not_fix_duplicate_all .br_notices_page_remove.button {
     padding: 2px 8px;
     margin-top: 0;

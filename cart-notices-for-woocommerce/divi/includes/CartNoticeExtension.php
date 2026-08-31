@@ -16,7 +16,9 @@ class BACN_CartNotice_DiviExtension extends DiviExtension {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die();
         }
-        $atts = berocket_sanitize_array($_POST);
+        check_ajax_referer( 'brcn_cart_notice', 'nonce' );
+
+        $atts = berocket_sanitize_array( wp_unslash( $_POST ) );
         $atts = self::convert_on_off($atts);
         if( ! empty($atts['display_inline']) ) {
             ob_start();
@@ -49,8 +51,14 @@ class BACN_CartNotice_DiviExtension extends DiviExtension {
 		}
 
 		// Enqueue builder bundle's data.
-		if ( et_core_is_fb_enabled() && ! empty( $this->_builder_js_data ) ) {
-			wp_localize_script( "{$this->name}-builder-bundle", "{$extension_name}BuilderData", $this->_builder_js_data );
+		if ( et_core_is_fb_enabled() ) {
+			if ( ! empty( $this->_builder_js_data ) ) {
+				wp_localize_script( "{$this->name}-builder-bundle", "{$extension_name}BuilderData", $this->_builder_js_data );
+			}
+
+			wp_localize_script( "{$this->name}-builder-bundle", 'BRCNCartNoticeData', array(
+				'nonce' => wp_create_nonce( 'brcn_cart_notice' ),
+			) );
 		}
 	}
     public static function convert_on_off($atts) {

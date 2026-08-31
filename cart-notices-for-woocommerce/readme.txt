@@ -4,8 +4,8 @@ Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
 Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
-Tested up to: 7.0.4
-Stable tag: 3.6.4
+Tested up to: 7.1
+Stable tag: 3.7
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -18,6 +18,9 @@ Cart Notices for WooCommerce plugin display on cart page notices based on produc
 = Features: =
 &#9989; Native WYSIWYG editor for notices
 &#9989; Notices with Time deadline
+&#9989; Scheduled notices with start and end date
+&#9989; Call-to-action buttons with link, style, width and target options
+&#9989; Cart-total progress bars for Maximum price notices
 &#9989; Notices for needed cart price
 &#9989; Notices for products in cart with quantity
 &#9989; Notices for product categories in cart
@@ -89,6 +92,16 @@ You can try this plugin's admin side [here](https://berocket.com/product/woocomm
 ---
 
 == Changelog ==
+
+= 3.7 =
+* Enhancement - Added a User Role condition with support for Guest / Logged-out Users.
+* Enhancement - Added campaign scheduling with optional start and end date and time limits.
+* Enhancement - Added configurable call-to-action buttons for notices.
+* Enhancement - Added cart-total progress bars for Maximum price notices.
+* Fix - Persist selected user roles when editing a notice.
+* Fix - Display legacy cart notices without an inline `display: none` style.
+* Security - Added nonce validation to the legacy Divi preview request.
+* Security - Changed backup restoration to use POST requests.
 
 = 3.6.4 =
 * Enhancement - Updated BeRocket framework.

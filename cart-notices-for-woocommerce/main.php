@@ -20,6 +20,7 @@ include_once(plugin_dir_path( __FILE__ ) . "includes/admin/funnels.php");
 class BeRocket_cart_notices extends BeRocket_Framework {
     public static $settings_name = 'br-cart_notices-options';
     public $info, $defaults, $values, $notice_array, $conditions;
+    protected $notice_progress_cart_totals = array();
     protected static $instance;
     protected $disable_settings_for_admin = array();
 
@@ -79,6 +80,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
             }
             $options = $this->get_option();
             add_action ( 'admin_enqueue_scripts', array( $this, 'admin_enqueue_scripts' ) );
+            add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_styles' ) );
             add_action( 'woocommerce_init', array( $this, 'store_referer' ) );
             add_shortcode( 'br_cart_notices', array( $this, 'shortcode' ) );
             add_action ( "widgets_init", array( $this, 'widgets_init' ) );
@@ -215,6 +217,121 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         }
         return $filter_array;
     }
+    protected function get_campaign_timezone() {
+        if( function_exists('wp_timezone') ) {
+            return wp_timezone();
+        }
+
+        $timezone_string = get_option('timezone_string');
+        if( ! empty($timezone_string) ) {
+            try {
+                return new DateTimeZone($timezone_string);
+            } catch( Exception $e ) {
+            }
+        }
+
+        $offset_minutes = (int) round((float) get_option('gmt_offset', 0) * 60);
+        if( $offset_minutes === 0 ) {
+            return new DateTimeZone('UTC');
+        }
+
+        $sign = ( $offset_minutes < 0 ? '-' : '+' );
+        $offset_minutes = abs($offset_minutes);
+        return new DateTimeZone(sprintf('%s%02d:%02d', $sign, floor($offset_minutes / 60), $offset_minutes % 60));
+    }
+    protected function get_campaign_datetime($value, $timezone, $is_end = false) {
+        if( ! is_string($value) || $value === '' ) {
+            return null;
+        }
+
+        $datetime = DateTimeImmutable::createFromFormat('!Y-m-d\\TH:i', $value, $timezone);
+        $errors = DateTimeImmutable::getLastErrors();
+        if( $datetime === false || ( is_array($errors) && ( ! empty($errors['warning_count']) || ! empty($errors['error_count']) ) ) ) {
+            return false;
+        }
+
+        if( $is_end ) {
+            $datetime = $datetime->setTime((int) $datetime->format('H'), (int) $datetime->format('i'), 59);
+        }
+        return $datetime;
+    }
+    public function is_notice_campaign_active($settings_limitation) {
+        if( empty($settings_limitation['campaign_start']) && empty($settings_limitation['campaign_end']) ) {
+            return true;
+        }
+
+        $timezone = $this->get_campaign_timezone();
+        $campaign_start = $this->get_campaign_datetime($settings_limitation['campaign_start'] ?? '', $timezone);
+        $campaign_end = $this->get_campaign_datetime($settings_limitation['campaign_end'] ?? '', $timezone, true);
+        if( $campaign_start === false || $campaign_end === false ) {
+            return false;
+        }
+        if( $campaign_start && $campaign_end && $campaign_start > $campaign_end ) {
+            return false;
+        }
+
+        $now = new DateTimeImmutable('now', $timezone);
+        return ( ! $campaign_start || $now >= $campaign_start ) && ( ! $campaign_end || $now <= $campaign_end );
+    }
+    protected function get_notice_progress_target($settings_limitation) {
+        if( empty($settings_limitation['price']) || ! is_numeric($settings_limitation['price']) ) {
+            return 0;
+        }
+
+        return max(0, (float) apply_filters('berocket_check_cart_notice_max_price', $settings_limitation['price']));
+    }
+    public function is_notice_progress_enabled($settings_limitation) {
+        return ! empty($settings_limitation['show_progress']) && $this->get_notice_progress_target($settings_limitation) > 0;
+    }
+    public function get_notice_progress_cart_total($settings_limitation) {
+        $use_tax = ! empty($settings_limitation['use_tax']);
+        $cache_key = ( $use_tax ? 'with_tax' : 'without_tax' );
+        if( isset($this->notice_progress_cart_totals[$cache_key]) ) {
+            return $this->notice_progress_cart_totals[$cache_key];
+        }
+
+        $cart = ( function_exists('WC') ? WC()->cart : false );
+        if( ! $cart || ! method_exists($cart, 'get_cart') ) {
+            return 0;
+        }
+
+        $total = 0;
+        foreach($cart->get_cart() as $cart_item) {
+            $total += (float) ( $cart_item['line_total'] ?? 0 );
+            if( $use_tax ) {
+                $total += (float) ( $cart_item['line_tax'] ?? 0 );
+            }
+        }
+        $this->notice_progress_cart_totals[$cache_key] = $total;
+
+        return $total;
+    }
+    public function add_notice_progress_bar($content, $settings_limitation) {
+        if( ! $this->is_notice_progress_enabled($settings_limitation) ) {
+            return $content;
+        }
+
+        $target = $this->get_notice_progress_target($settings_limitation);
+        $cart_total = $this->get_notice_progress_cart_total($settings_limitation);
+        $percentage = min(100, max(0, ( $cart_total / $target ) * 100));
+        $is_target_reached = ( $cart_total >= $target );
+        $success_text = ( isset($settings_limitation['progress_success_text']) && is_scalar($settings_limitation['progress_success_text']) ? sanitize_text_field($settings_limitation['progress_success_text']) : '' );
+        if( $is_target_reached && $success_text !== '' ) {
+            $content = '<p class="berocket_cart_notice_progress_success">'.esc_html($success_text).'</p>';
+        }
+
+        $background = ( isset($settings_limitation['progress_background']) && is_scalar($settings_limitation['progress_background']) ? sanitize_hex_color($settings_limitation['progress_background']) : false );
+        $fill = ( isset($settings_limitation['progress_fill']) && is_scalar($settings_limitation['progress_fill']) ? sanitize_hex_color($settings_limitation['progress_fill']) : false );
+        $background = ( $background ? $background : '#e5e5e5' );
+        $fill = ( $fill ? $fill : '#2ea3f2' );
+        $percentage_css = number_format($percentage, 2, '.', '');
+
+        $progress = '<div class="berocket_cart_notice_progress" role="progressbar" aria-label="'.esc_attr__('Cart progress', 'cart-notices-for-woocommerce').'" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'.esc_attr((string) round($percentage)).'">';
+        $progress .= '<span class="berocket_cart_notice_progress_track" style="background-color:'.esc_attr($background).'"><span class="berocket_cart_notice_progress_fill" style="background-color:'.esc_attr($fill).';width:'.esc_attr($percentage_css).'%"></span></span>';
+        $progress .= '</div>';
+
+        return $content.$progress;
+    }
     public function check_product_error($error, $settings_limitation, $qty, $price, $products) {
         $default_language = apply_filters( 'wpml_default_language', NULL );
         $error['product'] = $products;
@@ -224,8 +341,15 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         $error['category'] = '';
         $error['price'] = '';
         $error['price_total'] = '';
+        $progress_enabled = $this->is_notice_progress_enabled($settings_limitation);
+        if( $progress_enabled ) {
+            $price = $this->get_notice_progress_cart_total($settings_limitation);
+        }
         $error['price_cart'] = wc_price($price);
         $error['time'] = '';
+        if( ! empty($error['is_error']) && ! $this->is_notice_campaign_active($settings_limitation) ) {
+            $error['is_error'] = false;
+        }
         $cart = WC()->cart;
         $get_cart = $cart->get_cart();
         $products_in_cart = array();
@@ -281,12 +405,13 @@ class BeRocket_cart_notices extends BeRocket_Framework {
             }
         }
         if( ! empty($error['is_error']) ) {
+            $maximum_price = apply_filters('berocket_check_cart_notice_max_price', $settings_limitation['price'] ?? '');
             if( (! empty($settings_limitation['before_price']) && $price < apply_filters('berocket_check_cart_notice_min_price', $settings_limitation['before_price']))
-            || (! empty($settings_limitation['price']) && $price >= apply_filters('berocket_check_cart_notice_max_price', $settings_limitation['price'])) ) {
+            || (! empty($settings_limitation['price']) && $price >= $maximum_price && ! $progress_enabled) ) {
                 $error['is_error'] = false;
             } elseif( ! empty($settings_limitation['price']) ) {
                 $error['price_total'] = wc_price(apply_filters('berocket_check_cart_notice_min_price', $settings_limitation['price']));
-                $error['price'] = wc_price(apply_filters('berocket_check_cart_notice_max_price', $settings_limitation['price']) - $price);
+                $error['price'] = wc_price(max(0, $maximum_price - $price));
             }
         }
         if( ! empty($error['is_error']) ) {
@@ -352,7 +477,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
     public function cart_calculate_total($return_result) {
         $notices_list = $this->get_notice_list();
         foreach($notices_list as $notice_id => $notice) {
-            $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'" style="display:none;">'.$notice.'</div>';
+            $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'">'.$notice.'</div>';
             wc_print_notice($notice_text, 'notice');
         }
         return $return_result;
@@ -622,11 +747,33 @@ class BeRocket_cart_notices extends BeRocket_Framework {
                     foreach($check_result as $replace_from => $replace_to) {
                         $content = str_replace( '%'.$replace_from.'%', $replace_to, $content );
                     }
-                    $notices_list[$limitation_id] = $content;
+                    $content = $this->add_notice_progress_bar($content, $settings_minmax);
+                    $notices_list[$limitation_id] = $this->add_notice_cta($content, $settings_minmax);
                 }
             }
         }
         return $notices_list;
+    }
+    public function add_notice_cta($content, $settings) {
+        $text = ( isset($settings['button_text']) && is_scalar($settings['button_text']) ? sanitize_text_field($settings['button_text']) : '' );
+        $url = ( isset($settings['button_link']) && is_scalar($settings['button_link']) ? esc_url($settings['button_link']) : '' );
+        if( $text === '' || $url === '' ) {
+            return $content;
+        }
+
+        $classes = array('button', 'berocket_cart_notice_cta');
+        if( isset($settings['button_style']) && in_array($settings['button_style'], array('outline', 'text'), true) ) {
+            $classes[] = 'berocket_cart_notice_cta--'.$settings['button_style'];
+        }
+        $is_full_width = ( isset($settings['button_width']) && $settings['button_width'] === 'full' );
+        if( $is_full_width ) {
+            $classes[] = 'berocket_cart_notice_cta--full';
+        }
+        $target = ( isset($settings['button_target']) && $settings['button_target'] === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '' );
+        $layout_class = 'berocket_cart_notice_cta_layout'.( $is_full_width ? ' berocket_cart_notice_cta_layout--full' : '' );
+
+        $cta = '<a class="'.esc_attr(implode(' ', $classes)).'" href="'.$url.'"'.$target.'>'.esc_html($text).'</a>';
+        return '<div class="'.esc_attr($layout_class).'"><div class="berocket_cart_notice_content">'.$content.'</div>'.$cta.'</div>';
     }
     public function check_product($settings_limitations, $qty, $price, $products) {
         $error = array('is_error' => true);
@@ -838,6 +985,11 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         wp_register_style( 'berocket_cart_notices_admin_style', plugins_url( 'css/admin.css', __FILE__ ), "", BeRocket_cart_notices_version );
         wp_enqueue_style( 'berocket_cart_notices_admin_style' );
         parent::admin_init();
+    }
+    public function enqueue_frontend_styles() {
+        $style_path = plugin_dir_path( __FILE__ ).'css/frontend.css';
+        $style_version = ( file_exists($style_path) ? filemtime($style_path) : BeRocket_cart_notices_version );
+        wp_enqueue_style( 'berocket_cart_notices_front', plugins_url( 'css/frontend.css', __FILE__ ), array(), $style_version );
     }
     public function admin_menu() {
         if ( parent::admin_menu() ) {

@@ -43,6 +43,7 @@ class BAPFcartNotice extends Component {
   componentDidMount() {
     var body = new FormData();
     body.append('action', 'brcn_cart_notice');
+    body.append('nonce', window.BRCNCartNoticeData.nonce);
     var newProps = this.props;
     Object.keys(newProps).forEach(key => {
       body.append(key, newProps[key]);

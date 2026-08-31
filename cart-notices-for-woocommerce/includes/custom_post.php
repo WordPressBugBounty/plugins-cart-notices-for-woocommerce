@@ -1,5 +1,85 @@
 <?php
 class BeRocket_conditions_cart_notice extends BeRocket_conditions {
+    /**
+     * Add Cart Notices-specific conditions without changing the shared framework
+     * condition list used by other BeRocket plugins.
+     */
+    public static function get_conditions() {
+        $conditions = parent::get_conditions();
+        $conditions['condition_user_role'] = array(
+            'save' => 'save_condition_user_role',
+            'func' => 'check_condition_user_role',
+            'type' => 'user_role',
+            'name' => __( 'User role', 'cart-notices-for-woocommerce' ),
+        );
+
+        return $conditions;
+    }
+
+    /**
+     * Build the user role selector for a notice condition.
+     */
+    public static function condition_user_role($html, $name, $options) {
+        $roles = array();
+        if( isset($options['roles']) ) {
+            $roles = $options['roles'];
+        }
+        if( ! is_array($roles) ) {
+            $roles = array($roles);
+        }
+        $roles = array_map('strval', array_filter($roles, 'is_scalar'));
+
+        $role_names = wp_roles()->get_names();
+        $role_names = array('guest' => __( 'Guest / Logged-out Users', 'cart-notices-for-woocommerce' )) + $role_names;
+        $name_attribute = (empty($options['is_example']) ? '' : 'data-') . 'name';
+
+        $html .= '<div class="br_cond_user_roles">';
+        foreach($role_names as $role_slug => $role_name) {
+            $html .= '<label><input type="checkbox" value="' . esc_attr($role_slug) . '" ' . $name_attribute . '="' . esc_attr($name) . '[roles][]"' . (in_array($role_slug, $roles, true) ? ' checked' : '') . '> ' . esc_html(translate_user_role($role_name)) . '</label>';
+        }
+        $html .= '</div>';
+
+        return $html;
+    }
+
+    /**
+     * Keep only currently available roles and the guest pseudo-role in post meta.
+     */
+    public static function save_condition_user_role($condition) {
+        $roles = isset($condition['roles']) ? $condition['roles'] : array();
+        if( ! is_array($roles) ) {
+            $roles = array($roles);
+        }
+
+        $allowed_roles = array_keys(wp_roles()->get_names());
+        $allowed_roles[] = 'guest';
+        $roles = array_map('sanitize_key', array_map('strval', array_filter($roles, 'is_scalar')));
+        $condition['roles'] = array_values(array_unique(array_intersect($roles, $allowed_roles)));
+
+        return $condition;
+    }
+
+    /**
+     * Match a notice when the visitor is a guest or has any selected WordPress role.
+     */
+    public static function check_condition_user_role($show, $condition, $additional) {
+        $roles = isset($condition['roles']) ? $condition['roles'] : array();
+        if( ! is_array($roles) ) {
+            $roles = array($roles);
+        }
+        $roles = array_map('strval', array_filter($roles, 'is_scalar'));
+
+        if( in_array('guest', $roles, true) && ! is_user_logged_in() ) {
+            return true;
+        }
+        if( ! is_user_logged_in() ) {
+            return false;
+        }
+
+        $current_user = wp_get_current_user();
+        return ! empty($current_user->roles) && (bool) array_intersect($roles, $current_user->roles);
+    }
+
     public static function move_product_var_to_product($additional) {
         if( ! empty($additional['var_product_id']) ) {
             $additional['product_id'] = $additional['var_product_id'];
@@ -183,6 +263,13 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
             'category'      => '',
             'button_text'   => '',
             'button_link'   => '',
+            'button_target' => '',
+            'button_style'  => '',
+            'button_width'  => '',
+            'show_progress' => '',
+            'progress_background' => '#e5e5e5',
+            'progress_fill' => '#2ea3f2',
+            'progress_success_text' => '',
             'type'          => 'price',
             'price'         => '',
             'before_price'  => '',
@@ -199,6 +286,8 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                 6               => '1',
             ),
             'before_time'   => '',
+            'campaign_start'=> '',
+            'campaign_end'  => '',
             'products_required'=> array(),
             'products_blocking'=> false,
             'referer'       => '',
@@ -210,6 +299,7 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         add_filter('brfr_'.$this->hook_name.'_time_var', array($this, 'time_var'), 20, 4);
         add_filter('brfr_'.$this->hook_name.'_products_var', array($this, 'products_var'), 20, 4);
         add_filter('brfr_'.$this->hook_name.'_category_var', array($this, 'category_var'), 20, 4);
+        add_filter('brfr_'.$this->hook_name.'_campaign_schedule', array($this, 'section_campaign_schedule'), 20, 4);
     }
     function init_translation() {
         $this->post_settings['label'] = __( 'Notice', 'cart-notices-for-woocommerce' );
@@ -236,6 +326,7 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
             'condition_product_price',
             'condition_product_stockstatus',
             'condition_product_totalsales',
+            'condition_user_role',
         ));
 
         $this->add_meta_box('conditions', __( 'Conditions', 'cart-notices-for-woocommerce' ));
@@ -313,6 +404,12 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                 'Time' => array(
                     'icon' => 'clock-o',
                 ),
+                'Schedule' => array(
+                    'icon' => 'calendar',
+                ),
+                'Call to action' => array(
+                    'icon' => 'link',
+                ),
                 'Products' => array(
                     'icon' => 'inbox',
                 ),
@@ -320,7 +417,7 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                     'icon' => 'list-alt',
                 ),
                 'Referer host' => array(
-                    'icon' => 'link',
+                    'icon' => 'globe',
                 ),
             ),
             array(
@@ -348,6 +445,37 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                         "label_for"=> __('Use price tax(VAT) for cart total', 'cart-notices-for-woocommerce'),
                         "name"     => "use_tax",
                         "value"    => $options['use_tax'],
+                    ),
+                    'show_progress' => array(
+                        "type"      => "checkbox",
+                        "label"     => __('Show progress bar', 'cart-notices-for-woocommerce'),
+                        "label_for" => __('Uses Maximum price as its target.', 'cart-notices-for-woocommerce'),
+                        "name"      => "show_progress",
+                        "value"     => "1",
+                        "class"     => "br_notice_show_progress",
+                    ),
+                    'progress_background' => array(
+                        "type"     => "color",
+                        "label"    => __('Progress background color', 'cart-notices-for-woocommerce'),
+                        "name"     => "progress_background",
+                        "value"    => $options['progress_background'],
+                        "tr_class" => "br_notice_progress_settings",
+                    ),
+                    'progress_fill' => array(
+                        "type"     => "color",
+                        "label"    => __('Progress fill color', 'cart-notices-for-woocommerce'),
+                        "name"     => "progress_fill",
+                        "value"    => $options['progress_fill'],
+                        "tr_class" => "br_notice_progress_settings",
+                    ),
+                    'progress_success_text' => array(
+                        "type"      => "text",
+                        "label"     => __('Message after reaching the target', 'cart-notices-for-woocommerce'),
+                        "label_for" => __('Replaces the notice text when the target is reached.', 'cart-notices-for-woocommerce'),
+                        "name"      => "progress_success_text",
+                        "value"     => $options['progress_success_text'],
+                        "class"     => "widefat",
+                        "tr_class"  => "br_notice_progress_settings",
                     ),
                     'price_var' => array(
                         'section' => 'price_var',
@@ -427,6 +555,59 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                         'section' => 'time_var',
                     ),
                 ),
+                'Schedule' => array(
+                    'campaign_schedule' => array(
+                        'section' => 'campaign_schedule',
+                    ),
+                ),
+                'Call to action' => array(
+                    'button_text' => array(
+                        "type"      => "text",
+                        "label"     => __('Call to action', 'cart-notices-for-woocommerce'),
+                        "label_for" => __('The button is shown only when both the text and URL are set.', 'cart-notices-for-woocommerce'),
+                        "name"      => "button_text",
+                        "value"     => $options['button_text'],
+                        "class"     => "widefat",
+                    ),
+                    'button_link' => array(
+                        "type"      => "text",
+                        "label"     => __('Call to action URL', 'cart-notices-for-woocommerce'),
+                        "name"      => "button_link",
+                        "value"     => $options['button_link'],
+                        "class"     => "br_notice_cta_url",
+                    ),
+                    'button_target' => array(
+                        "type"     => "selectbox",
+                        "label"    => __('Open link', 'cart-notices-for-woocommerce'),
+                        "name"     => "button_target",
+                        "value"    => $options['button_target'],
+                        "options"  => array(
+                            array('value' => '', 'text' => __('In the same tab', 'cart-notices-for-woocommerce')),
+                            array('value' => '_blank', 'text' => __('In a new tab', 'cart-notices-for-woocommerce')),
+                        ),
+                    ),
+                    'button_style' => array(
+                        "type"     => "selectbox",
+                        "label"    => __('Button style', 'cart-notices-for-woocommerce'),
+                        "name"     => "button_style",
+                        "value"    => $options['button_style'],
+                        "options"  => array(
+                            array('value' => '', 'text' => __('Theme default', 'cart-notices-for-woocommerce')),
+                            array('value' => 'outline', 'text' => __('Outline', 'cart-notices-for-woocommerce')),
+                            array('value' => 'text', 'text' => __('Text link', 'cart-notices-for-woocommerce')),
+                        ),
+                    ),
+                    'button_width' => array(
+                        "type"     => "selectbox",
+                        "label"    => __('Button width', 'cart-notices-for-woocommerce'),
+                        "name"     => "button_width",
+                        "value"    => $options['button_width'],
+                        "options"  => array(
+                            array('value' => '', 'text' => __('Normal', 'cart-notices-for-woocommerce')),
+                            array('value' => 'full', 'text' => __('Full notice width', 'cart-notices-for-woocommerce')),
+                        ),
+                    ),
+                ),
                 'Products' => array(
                     'products_required' => array(
                         "type"     => "products",
@@ -493,7 +674,37 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         );
         echo '</div>';
     }
+    public function section_campaign_schedule($html, $field_option, $options, $settings_name) {
+        $timezone = get_option('timezone_string');
+        if( empty($timezone) ) {
+            $timezone = sprintf('UTC%+g', (float) get_option('gmt_offset', 0));
+        }
+
+        $html .= '<th scope="row">'.__('Campaign schedule', 'cart-notices-for-woocommerce').'</th><td><div class="br_field">';
+        $html .= '<p><label for="br_notice_campaign_start">'.__('Start date and time', 'cart-notices-for-woocommerce').'</label>';
+        $html .= '<input id="br_notice_campaign_start" type="datetime-local" step="60" name="'.$this->post_name.'[campaign_start]" value="'.esc_attr($options['campaign_start'] ?? '').'"></p>';
+        $html .= '<p><label for="br_notice_campaign_end">'.__('End date and time', 'cart-notices-for-woocommerce').'</label>';
+        $html .= '<input id="br_notice_campaign_end" type="datetime-local" step="60" name="'.$this->post_name.'[campaign_end]" value="'.esc_attr($options['campaign_end'] ?? '').'"></p>';
+        $html .= '<p><button type="button" class="button tiny-button br_notice_campaign_schedule_clear">'.__('Clear both', 'cart-notices-for-woocommerce').'</button></p>';
+        $html .= '<p><small>'.sprintf(__('Leave a field empty to remove that limit. Times use the WordPress timezone: %s.', 'cart-notices-for-woocommerce'), esc_html($timezone)).'</small></p>';
+        $html .= '</div></td>';
+        return $html;
+    }
     public function wc_save_product_without_check( $post_id, $post ) {
+        if( ! empty($_POST[$this->post_name]) && is_array($_POST[$this->post_name]) ) {
+            $notice_settings = &$_POST[$this->post_name];
+            $notice_settings['button_text'] = ( isset($notice_settings['button_text']) && is_scalar($notice_settings['button_text']) ? sanitize_text_field(wp_unslash($notice_settings['button_text'])) : '' );
+            $notice_settings['button_link'] = ( isset($notice_settings['button_link']) && is_scalar($notice_settings['button_link']) ? esc_url_raw(wp_unslash($notice_settings['button_link'])) : '' );
+            $notice_settings['button_target'] = ( isset($notice_settings['button_target']) && $notice_settings['button_target'] === '_blank' ? '_blank' : '' );
+            $notice_settings['button_style'] = ( isset($notice_settings['button_style']) && in_array($notice_settings['button_style'], array('outline', 'text'), true) ? $notice_settings['button_style'] : '' );
+            $notice_settings['button_width'] = ( isset($notice_settings['button_width']) && $notice_settings['button_width'] === 'full' ? 'full' : '' );
+            $notice_settings['show_progress'] = ( isset($notice_settings['show_progress']) && $notice_settings['show_progress'] === '1' ? '1' : '' );
+            $progress_background = ( isset($notice_settings['progress_background']) && is_scalar($notice_settings['progress_background']) ? sanitize_hex_color(wp_unslash($notice_settings['progress_background'])) : false );
+            $progress_fill = ( isset($notice_settings['progress_fill']) && is_scalar($notice_settings['progress_fill']) ? sanitize_hex_color(wp_unslash($notice_settings['progress_fill'])) : false );
+            $notice_settings['progress_background'] = ( $progress_background ? $progress_background : '#e5e5e5' );
+            $notice_settings['progress_fill'] = ( $progress_fill ? $progress_fill : '#2ea3f2' );
+            $notice_settings['progress_success_text'] = ( isset($notice_settings['progress_success_text']) && is_scalar($notice_settings['progress_success_text']) ? sanitize_text_field(wp_unslash($notice_settings['progress_success_text'])) : '' );
+        }
         parent::wc_save_product_without_check( $post_id, $post );
         if( method_exists($this->conditions, 'save') ) {
             $settings = get_post_meta( $post_id, $this->post_name, true );

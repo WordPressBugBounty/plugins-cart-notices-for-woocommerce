@@ -82,6 +82,8 @@ class BeRocket_cart_notices_Paid extends BeRocket_plugin_variations {
                 foreach($check_result as $replace_from => $replace_to) {
                     $content = str_replace( '%'.$replace_from.'%', $replace_to, $content );
                 }
+                $content = $BeRocket_cart_notices->add_notice_progress_bar($content, $limitation_variables['settings_minmax']);
+                $content = $BeRocket_cart_notices->add_notice_cta($content, $limitation_variables['settings_minmax']);
                 $filter_array['notices_list'][$limitation_variables['limitation_id'].'_'.($use_variation ? $product_variables['var_product_id'] : $product_variables['product_id'])] = $content;
             }
         }

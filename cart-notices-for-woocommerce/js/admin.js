@@ -12,6 +12,16 @@ var br_savin_ajax = false;
         $(document).on('click', '.br_notices_page_remove', function(event) {
             $(this).parents('.br_notices_page_id').remove();
         });
+
+        $(document).on('click', '.br_notice_campaign_schedule_clear', function() {
+            $('#br_notice_campaign_start, #br_notice_campaign_end').val('');
+        });
+
+        function check_br_notice_progress() {
+            $('.br_notice_progress_settings').toggle($('.br_notice_show_progress').prop('checked'));
+        }
+        check_br_notice_progress();
+        $(document).on('change', '.br_notice_show_progress', check_br_notice_progress);
         
         function check_br_notice_fix_duplicate() {
             if( $('.br_notice_fix_duplicate').prop('checked') ) {
