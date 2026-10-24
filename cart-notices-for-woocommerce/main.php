@@ -19,6 +19,16 @@ include_once(plugin_dir_path( __FILE__ ) . "includes/admin/funnels.php");
  */
 class BeRocket_cart_notices extends BeRocket_Framework {
     public static $settings_name = 'br-cart_notices-options';
+    public $import_export = array(
+        'pages' => array(
+            'export_type' => 'post',
+            'post_type' => 'page',
+            'multiple' => true,
+            'passthrough' => array('shop', 'category', 'product'),
+            'on_missing' => 'remove',
+        ),
+    );
+    public $import_export_posts = array('br_notice');
     public $info, $defaults, $values, $notice_array, $conditions;
     protected $notice_progress_cart_totals = array();
     protected static $instance;
@@ -97,6 +107,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
                 add_action( 'woocommerce_add_to_cart_fragments', array( $this, 'wc_notices_page_check' ), 10, 1 );
             }
 
+            add_filter( 'woocommerce_add_to_cart_fragments', array( $this, 'notice_fragments' ), 20 );
             add_action('wp_footer', array($this, 'wp_footer'));
             add_filter ( 'BeRocket_updater_menu_order_custom_post', array($this, 'menu_order_custom_post') );
             add_action( 'divi_extensions_init', array($this, 'divi_extensions_init') );
@@ -166,16 +177,23 @@ class BeRocket_cart_notices extends BeRocket_Framework {
     function shortcode($atts = array()) {
         $notices_list = $this->get_notice_list();
         ob_start();
-        foreach($notices_list as $notice_id => $notice) {
-            wc_print_notice('<span class="berocket_cart_notice_shortcode_notice berocket_cart_notice berocket_cart_notice_'.$notice_id.'"></span>'.$notice, 'notice');
+        foreach((array) $notices_list as $notice_id => $notice) {
+            $this->print_notice($notice_id, $notice, true);
         }
         $text = ob_get_clean();
-        if( ! empty($text) ) {
-            $text = '<div class="woocommerce berocket_cart_notice_shortcode">'.$text.'</div>';
-        } else {
-            $text = '';
+        return '<div class="woocommerce berocket_cart_notice_shortcode">'.$text.'</div>';
+    }
+    public function notice_fragments($fragments) {
+        // Explicit shortcode placements are independent of automatic notice settings.
+        $fragments['div.berocket_cart_notice_shortcode'] = $this->shortcode();
+        ob_start();
+        $options = $this->get_option();
+        global $berocket_cart_notice_add_notice;
+        if( empty($options['use_wc_notices']) || ! empty($berocket_cart_notice_add_notice) ) {
+            $this->cart_calculate_total(false);
         }
-        return $text;
+        $fragments['div.berocket_cart_notice_auto'] = '<div class="woocommerce berocket_cart_notice_auto">'.ob_get_clean().'</div>';
+        return $fragments;
     }
     public function init () {
         parent::init();
@@ -305,6 +323,9 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         $this->notice_progress_cart_totals[$cache_key] = $total;
 
         return $total;
+    }
+    public function reset_notice_progress_totals() {
+        $this->notice_progress_cart_totals = array();
     }
     public function add_notice_progress_bar($content, $settings_limitation) {
         if( ! $this->is_notice_progress_enabled($settings_limitation) ) {
@@ -476,11 +497,34 @@ class BeRocket_cart_notices extends BeRocket_Framework {
     }
     public function cart_calculate_total($return_result) {
         $notices_list = $this->get_notice_list();
-        foreach($notices_list as $notice_id => $notice) {
-            $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'">'.$notice.'</div>';
-            wc_print_notice($notice_text, 'notice');
+        foreach((array) $notices_list as $notice_id => $notice) {
+            $this->print_notice($notice_id, $notice);
         }
         return $return_result;
+    }
+    public function print_notice($notice_id, $notice, $shortcode = false) {
+        $options = $this->get_option();
+        // Paid per-product notices use keys such as noticeID_productID.
+        $settings = get_post_meta(absint($notice_id), 'br_notice', true);
+        $style = (is_array($settings) && isset($settings['notice_style']) ? $settings['notice_style'] : '');
+        if( empty($options['use_wc_notices']) && in_array($style, array('info', 'card', 'hint'), true) ) {
+            $classes = 'berocket_cart_notice berocket_cart_notice_'.$notice_id;
+            if( $shortcode ) { $classes .= ' berocket_cart_notice_shortcode_notice'; }
+            $allowed = array_replace_recursive(wp_kses_allowed_html('post'), array(
+                'a' => array('tabindex' => true),
+                'div' => array('role' => true, 'aria-label' => true, 'aria-valuemin' => true, 'aria-valuemax' => true, 'aria-valuenow' => true),
+            ));
+            $content = wp_kses(apply_filters('woocommerce_add_notice', $notice), apply_filters('woocommerce_kses_notice_allowed_tags', $allowed));
+            echo '<div class="berocket_cart_notice_preset berocket_cart_notice_preset--'.esc_attr($style).'">';
+            echo '<div class="'.esc_attr($classes).'" data-notice_id="'.esc_attr($notice_id).'">'.$content.'</div></div>';
+            return;
+        }
+        // Keep existing markup and WooCommerce behavior for Default / WC notices mode.
+        $notice_id = esc_attr($notice_id);
+        $notice_text = ($shortcode
+            ? '<span class="berocket_cart_notice_shortcode_notice berocket_cart_notice berocket_cart_notice_'.$notice_id.'"></span>'.$notice
+            : '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'">'.$notice.'</div>');
+        wc_print_notice($notice_text, 'notice');
     }
     public function wc_add_notice() {
         //REMOVE ERRORS/NOTICES IF ALREADY ADDED
@@ -492,7 +536,8 @@ class BeRocket_cart_notices extends BeRocket_Framework {
                     if( is_array($error_text) ) {
                         $error_text = ( isset($error_text['notice']) ? $error_text['notice'] : "" );
                     }
-                    if( strpos($error_text, '<span class="berocket_cart_notice') !== FALSE ) {
+                    if( strpos($error_text, '<span class="berocket_cart_notice') !== FALSE
+                        || strpos($error_text, '<div class="berocket_cart_notice ') !== FALSE ) {
                         unset($notices_old[$error_type][$error_i]);
                     }
                 }
@@ -501,7 +546,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         wc_set_notices($notices_old);
 
         $notices_list = $this->get_notice_list();
-        foreach($notices_list as $notice_id => $notice) {
+        foreach((array) $notices_list as $notice_id => $notice) {
             $notice_text = '<div class="berocket_cart_notice berocket_cart_notice_'.$notice_id.'" data-notice_id="'.$notice_id.'">'.$notice.'</div>';
             wc_add_notice($notice_text, 'notice');
         }
@@ -547,10 +592,13 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         }
         function berocket_cart_notice_shortcode_fix_after() {
             if( jQuery(".berocket_cart_notice_shortcode").length && jQuery(".berocket_cart_notice").length ) {
-                var matched_elements = jQuery(".berocket_cart_notice").parent();
+                var matched_elements = jQuery(".berocket_cart_notice:not(.berocket_cart_notice_shortcode_notice)").parent();
+                if( ! matched_elements.length ) {
+                    return;
+                }
                 jQuery(".berocket_cart_notice_shortcode").each(function() {
                     var cloned_element = matched_elements.clone();
-                    jQuery(this).append(cloned_element);
+                    jQuery(this).empty().append(cloned_element);
                     jQuery(this).find(".berocket_cart_notice").addClass("berocket_cart_notice_shortcode_notice");
                 });
             }
@@ -762,8 +810,11 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         }
 
         $classes = array('button', 'berocket_cart_notice_cta');
-        if( isset($settings['button_style']) && in_array($settings['button_style'], array('outline', 'text'), true) ) {
+        if( isset($settings['button_style']) && in_array($settings['button_style'], array('outline', 'text', 'gradient', 'pill', 'soft', 'compact-solid', 'compact-outline', 'compact-pill'), true) ) {
             $classes[] = 'berocket_cart_notice_cta--'.$settings['button_style'];
+            if( ! in_array($settings['button_style'], array('outline', 'text'), true) ) {
+                $classes[] = 'berocket_cart_notice_cta--preset';
+            }
         }
         $is_full_width = ( isset($settings['button_width']) && $settings['button_width'] === 'full' );
         if( $is_full_width ) {
@@ -773,6 +824,13 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         $layout_class = 'berocket_cart_notice_cta_layout'.( $is_full_width ? ' berocket_cart_notice_cta_layout--full' : '' );
 
         $cta = '<a class="'.esc_attr(implode(' ', $classes)).'" href="'.$url.'"'.$target.'>'.esc_html($text).'</a>';
+        $subtitle = (isset($settings['button_subtitle']) && is_scalar($settings['button_subtitle']) ? sanitize_text_field($settings['button_subtitle']) : '');
+        if( $subtitle !== '' ) {
+            // Headings/content filters must not interpret plain subtitle text as shortcodes.
+            $subtitle = str_replace(array('[', ']'), array('&#91;', '&#93;'), esc_html($subtitle));
+            $cta = '<div class="berocket_cart_notice_cta_group">'.$cta.'<span class="berocket_cart_notice_cta_subtitle">'.$subtitle.'</span></div>';
+            $layout_class .= ' berocket_cart_notice_cta_layout--subtitle';
+        }
         return '<div class="'.esc_attr($layout_class).'"><div class="berocket_cart_notice_content">'.$content.'</div>'.$cta.'</div>';
     }
     public function check_product($settings_limitations, $qty, $price, $products) {
@@ -990,6 +1048,9 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         $style_path = plugin_dir_path( __FILE__ ).'css/frontend.css';
         $style_version = ( file_exists($style_path) ? filemtime($style_path) : BeRocket_cart_notices_version );
         wp_enqueue_style( 'berocket_cart_notices_front', plugins_url( 'css/frontend.css', __FILE__ ), array(), $style_version );
+        $dependencies = BeRocket_Cart_Notices_Store_API::$block_page
+            ? array('jquery', 'wp-data', 'wc-blocks-data-store') : array('jquery', 'wc-cart-fragments');
+        wp_enqueue_script( 'berocket_cart_notices_front', plugins_url( 'js/frontend.js', __FILE__ ), $dependencies, filemtime(plugin_dir_path(__FILE__).'js/frontend.js'), true );
     }
     public function admin_menu() {
         if ( parent::admin_menu() ) {
@@ -1010,7 +1071,24 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         $compatibility['br_notice'] = 'br-cart_notices';
         return $compatibility;
     }
+    public function automatic_notices_enabled() {
+        $options = $this->get_option();
+        global $berocket_cart_notice_add_notice, $wp_query, $br_wp_query_not_main;
+        if( ! empty($options['use_wc_notices']) ) {
+            $automatic = ! empty($berocket_cart_notice_add_notice);
+        } else {
+            $language = apply_filters('wpml_default_language', NULL);
+            $page_id = apply_filters('wpml_object_id', isset($wp_query->queried_object->ID) ? $wp_query->queried_object->ID : '', 'page', true, $language);
+            $pages = isset($options['pages']) ? (array) $options['pages'] : array();
+            $automatic = (is_cart() && empty($options['disable_cart'])) || (is_checkout() && empty($options['disable_checkout']))
+                || (empty($br_wp_query_not_main) && (in_array($page_id, $pages)
+                    || (is_shop() && in_array('shop', $pages)) || (is_product_category() && in_array('category', $pages))
+                    || (is_product() && in_array('product', $pages))));
+        }
+        return (bool) $automatic;
+    }
     public function wp_footer() {
+        wp_add_inline_script('berocket_cart_notices_front', 'window.brCartNoticeAutomatic = '.wp_json_encode($this->automatic_notices_enabled()).';', 'before');
         echo '<style>.berocket_cart_notice p{margin:0!important}</style>';
     }
     public function divi_extensions_init() {

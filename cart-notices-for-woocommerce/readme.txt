@@ -4,8 +4,8 @@ Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
 Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
-Tested up to: 7.1
-Stable tag: 3.7
+Tested up to: 7.1.3
+Stable tag: 3.8
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,15 @@ You can try this plugin's admin side [here](https://berocket.com/product/woocomm
 ---
 
 == Changelog ==
+
+= 3.8 =
+* Feature - Added three cart notice styles and six CTA button designs with compact variants.
+* Feature - Added optional subtitles below notice action buttons.
+* Enhancement - Improved compatibility with the WooCommerce Store API.
+* Fix - Prevented theme hover effects and generated arrows from changing notice button dimensions.
+* Enhancement - Added or improved settings import/export and backup restoration.
+* Enhancement - Updated BeRocket Framework to 3.1.3 with CDN release metadata, reduced updater API traffic, isolated invalid catalog records, improved banner tracking, and an SVG account icon.
+* Enhancement - Updated compatibility declarations for WordPress 7.1.3 and WooCommerce 11.2.1.
 
 = 3.7 =
 * Enhancement - Added a User Role condition with support for Guest / Logged-out Users.

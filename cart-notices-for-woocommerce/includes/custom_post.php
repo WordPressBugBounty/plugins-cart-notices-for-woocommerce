@@ -218,6 +218,28 @@ class BeRocket_conditions_cart_notice extends BeRocket_conditions {
 }
 class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
     public $hook_name = 'berocket_cart_notice_custom_post';
+    public $import_export = array(
+        'condition' => array('export_type' => 'conditions'),
+        'category' => array(
+            'export_type' => 'taxonomy',
+            'taxonomy' => 'product_cat',
+            'passthrough' => array(''),
+            'on_missing' => 'remove',
+        ),
+        'products_required' => array(
+            'export_type' => 'post',
+            'post_type' => array('product', 'product_variation'),
+            'multiple' => true,
+            'on_missing' => 'remove',
+        ),
+        'products_blocking' => array(
+            'export_type' => 'post',
+            'post_type' => array('product', 'product_variation'),
+            'multiple' => 'auto',
+            'passthrough' => array(false, ''),
+            'on_missing' => 'remove',
+        ),
+    );
     public $conditions;
     protected static $instance;
     public $post_type_parameters = array(
@@ -261,7 +283,9 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
             'condition'         => array(),
             'condition_mode'=> '',
             'category'      => '',
+            'notice_style'  => '',
             'button_text'   => '',
+            'button_subtitle' => '',
             'button_link'   => '',
             'button_target' => '',
             'button_style'  => '',
@@ -406,6 +430,9 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                 ),
                 'Schedule' => array(
                     'icon' => 'calendar',
+                ),
+                'Design' => array(
+                    'icon' => 'paint-brush',
                 ),
                 'Call to action' => array(
                     'icon' => 'link',
@@ -560,6 +587,21 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                         'section' => 'campaign_schedule',
                     ),
                 ),
+                'Design' => array(
+                    'notice_style' => array(
+                        'type' => 'selectbox',
+                        'label' => __('Notice style', 'cart-notices-for-woocommerce'),
+                        'name' => 'notice_style',
+                        'value' => $options['notice_style'],
+                        'options' => array(
+                            array('value' => '', 'text' => __('Default (WooCommerce)', 'cart-notices-for-woocommerce')),
+                            array('value' => 'info', 'text' => __('Info strip', 'cart-notices-for-woocommerce')),
+                            array('value' => 'card', 'text' => __('Bordered card', 'cart-notices-for-woocommerce')),
+                            array('value' => 'hint', 'text' => __('Compact hint', 'cart-notices-for-woocommerce')),
+                        ),
+                        'label_for' => __('Applies only to this notice. Use WC notices mode keeps the WooCommerce design.', 'cart-notices-for-woocommerce'),
+                    ),
+                ),
                 'Call to action' => array(
                     'button_text' => array(
                         "type"      => "text",
@@ -568,6 +610,14 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                         "name"      => "button_text",
                         "value"     => $options['button_text'],
                         "class"     => "widefat",
+                    ),
+                    'button_subtitle' => array(
+                        'type' => 'text',
+                        'label' => __('CTA subtitle', 'cart-notices-for-woocommerce'),
+                        'label_for' => __('Optional plain text below the button. Shown only when the button text and URL are set.', 'cart-notices-for-woocommerce'),
+                        'name' => 'button_subtitle',
+                        'value' => $options['button_subtitle'],
+                        'class' => 'widefat',
                     ),
                     'button_link' => array(
                         "type"      => "text",
@@ -595,6 +645,12 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                             array('value' => '', 'text' => __('Theme default', 'cart-notices-for-woocommerce')),
                             array('value' => 'outline', 'text' => __('Outline', 'cart-notices-for-woocommerce')),
                             array('value' => 'text', 'text' => __('Text link', 'cart-notices-for-woocommerce')),
+                            array('value' => 'gradient', 'text' => __('Gradient', 'cart-notices-for-woocommerce')),
+                            array('value' => 'pill', 'text' => __('Pill', 'cart-notices-for-woocommerce')),
+                            array('value' => 'soft', 'text' => __('Soft', 'cart-notices-for-woocommerce')),
+                            array('value' => 'compact-solid', 'text' => __('Compact solid', 'cart-notices-for-woocommerce')),
+                            array('value' => 'compact-outline', 'text' => __('Compact outline', 'cart-notices-for-woocommerce')),
+                            array('value' => 'compact-pill', 'text' => __('Compact pill', 'cart-notices-for-woocommerce')),
                         ),
                     ),
                     'button_width' => array(
@@ -693,10 +749,12 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
     public function wc_save_product_without_check( $post_id, $post ) {
         if( ! empty($_POST[$this->post_name]) && is_array($_POST[$this->post_name]) ) {
             $notice_settings = &$_POST[$this->post_name];
+            $notice_settings['notice_style'] = (isset($notice_settings['notice_style']) && in_array($notice_settings['notice_style'], array('info', 'card', 'hint'), true) ? $notice_settings['notice_style'] : '');
             $notice_settings['button_text'] = ( isset($notice_settings['button_text']) && is_scalar($notice_settings['button_text']) ? sanitize_text_field(wp_unslash($notice_settings['button_text'])) : '' );
+            $notice_settings['button_subtitle'] = (isset($notice_settings['button_subtitle']) && is_scalar($notice_settings['button_subtitle']) ? sanitize_text_field(wp_unslash($notice_settings['button_subtitle'])) : '');
             $notice_settings['button_link'] = ( isset($notice_settings['button_link']) && is_scalar($notice_settings['button_link']) ? esc_url_raw(wp_unslash($notice_settings['button_link'])) : '' );
             $notice_settings['button_target'] = ( isset($notice_settings['button_target']) && $notice_settings['button_target'] === '_blank' ? '_blank' : '' );
-            $notice_settings['button_style'] = ( isset($notice_settings['button_style']) && in_array($notice_settings['button_style'], array('outline', 'text'), true) ? $notice_settings['button_style'] : '' );
+            $notice_settings['button_style'] = ( isset($notice_settings['button_style']) && in_array($notice_settings['button_style'], array('outline', 'text', 'gradient', 'pill', 'soft', 'compact-solid', 'compact-outline', 'compact-pill'), true) ? $notice_settings['button_style'] : '' );
             $notice_settings['button_width'] = ( isset($notice_settings['button_width']) && $notice_settings['button_width'] === 'full' ? 'full' : '' );
             $notice_settings['show_progress'] = ( isset($notice_settings['show_progress']) && $notice_settings['show_progress'] === '1' ? '1' : '' );
             $progress_background = ( isset($notice_settings['progress_background']) && is_scalar($notice_settings['progress_background']) ? sanitize_hex_color(wp_unslash($notice_settings['progress_background'])) : false );
@@ -709,6 +767,11 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         if( method_exists($this->conditions, 'save') ) {
             $settings = get_post_meta( $post_id, $this->post_name, true );
             $settings['condition'] = $this->conditions->save($settings['condition'], $this->hook_name);
+            if( isset($_POST[$this->post_name]['button_subtitle']) && is_scalar($_POST[$this->post_name]['button_subtitle']) ) {
+                // The framework KSES path encodes ampersands; keep this field plain text.
+                // update_post_meta() removes one slash layer from each stored string.
+                $settings['button_subtitle'] = wp_slash(sanitize_text_field($_POST[$this->post_name]['button_subtitle']));
+            }
             update_post_meta( $post_id, $this->post_name, $settings );
         }
     }

@@ -21,18 +21,107 @@
     margin: 0;
     vertical-align: baseline;
 }
-.berocket_cart_notice_cta--outline {
+/* Theme-injected button icons must not change the CTA's size or alignment. */
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta::before,
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta::after {
+    content: none !important;
+    display: none !important;
+}
+/* Keep the CTA box stable instead of adopting theme hover borders/icon space. */
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta {
+    box-sizing: border-box;
+    border: 1px solid rgba(0, 0, 0, .15) !important;
+    padding: 10px 18px !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--outline {
     background: transparent !important;
-    border: 1px solid currentColor;
+    border: 1px solid currentColor !important;
     color: inherit !important;
 }
-.berocket_cart_notice_cta--text {
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--text {
     background: transparent !important;
-    border: 0;
+    border: 0 !important;
     box-shadow: none;
     color: inherit !important;
     padding: 0 !important;
     text-decoration: underline;
+}
+/* Extra specificity keeps these opt-in designs consistent in WC notice themes. */
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--preset {
+    box-sizing: border-box;
+    justify-content: center;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 0;
+    height: auto;
+    border: 1px solid transparent !important;
+    border-radius: 6px;
+    box-shadow: none;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    letter-spacing: normal;
+    text-align: center;
+    text-decoration: none;
+    text-transform: none;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    flex-shrink: 0;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--gradient {
+    background: linear-gradient(120deg, #0e646e, #244eb3) !important;
+    color: #fff !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--gradient:hover {
+    background: linear-gradient(120deg, #0b5058, #1c3e8f) !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--pill {
+    border-radius: 999px;
+    background: #6941c6 !important;
+    color: #fff !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--pill:hover {
+    background: #53319e !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--soft {
+    background: #e8efff !important;
+    color: #23439a !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--soft:hover {
+    background: #d7e3ff !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-solid,
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-outline,
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-pill {
+    padding: 5px 12px !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-solid {
+    background: #263449 !important;
+    color: #fff !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-solid:hover {
+    background: #172234 !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-outline {
+    border-color: #52627b !important;
+    background: #fff !important;
+    color: #263449 !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-outline:hover {
+    background: #edf1f6 !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-pill {
+    border-radius: 999px;
+    background: #0e6460 !important;
+    color: #fff !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--compact-pill:hover {
+    background: #0a4e4b !important;
+}
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--preset:focus-visible {
+    outline: 2px solid #182235;
+    outline-offset: 3px;
+    box-shadow: 0 0 0 2px #fff;
 }
 .berocket_cart_notice_cta--full {
     display: block;
@@ -59,4 +148,85 @@
     display: block;
     height: 100%;
     transition: width .2s ease;
+}
+.berocket_cart_notice_preset {
+    box-sizing: border-box;
+    color: #243746;
+    margin: 0 0 1em;
+    overflow-wrap: anywhere;
+    padding: 14px 18px;
+}
+.berocket_cart_notice_preset--info {
+    background: #eaf4ff;
+    border-left: 4px solid #2271b1;
+}
+.berocket_cart_notice_preset--card {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 20px;
+}
+.berocket_cart_notice_preset--hint {
+    background: #f6f7f7;
+    border-left: 2px solid #a7aaad;
+    font-size: .9em;
+    padding: 8px 12px;
+}
+.berocket_cart_notice_preset .berocket_cart_notice_cta_layout {
+    flex-wrap: wrap;
+}
+.berocket_cart_notice_preset .berocket_cart_notice_cta_layout .berocket_cart_notice_content {
+    flex-basis: 180px;
+}
+.berocket_cart_notice_preset .berocket_cart_notice_cta {
+    box-sizing: border-box;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.berocket_cart_notice_preset img {
+    max-width: 100%;
+    height: auto;
+}
+.berocket_cart_notice_preset .berocket_cart_notice > :first-child {
+    margin-top: 0;
+}
+.berocket_cart_notice_preset .berocket_cart_notice > :last-child {
+    margin-bottom: 0;
+}
+.berocket_cart_notice_cta_layout--subtitle {
+    flex-wrap: wrap;
+}
+.berocket_cart_notice_cta_layout--subtitle .berocket_cart_notice_content {
+    flex-basis: 180px;
+    overflow-wrap: anywhere;
+}
+.berocket_cart_notice_cta_group {
+    display: flex;
+    flex: 0 1 220px;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    max-width: 100%;
+}
+.berocket_cart_notice_cta_group a.berocket_cart_notice_cta {
+    box-sizing: border-box;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+.berocket_cart_notice_cta_subtitle {
+    display: block;
+    max-width: 100%;
+    font-size: .85em;
+    line-height: 1.4;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+.berocket_cart_notice_cta_layout--full .berocket_cart_notice_cta_group {
+    width: 100%;
+    flex-basis: 100%;
 }
