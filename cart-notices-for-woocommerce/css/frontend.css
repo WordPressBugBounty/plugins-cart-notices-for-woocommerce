@@ -23,7 +23,9 @@
 }
 /* Theme-injected button icons must not change the CTA's size or alignment. */
 .berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta::before,
-.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta::after {
+.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta::after,
+.berocket_cart_notice_cta_layout a.berocket_cart_notice_cta--text::before,
+.berocket_cart_notice_cta_layout a.berocket_cart_notice_cta--text::after {
     content: none !important;
     display: none !important;
 }
@@ -38,13 +40,26 @@
     border: 1px solid currentColor !important;
     color: inherit !important;
 }
-.berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--text {
+.berocket_cart_notice_cta_layout a.berocket_cart_notice_cta.berocket_cart_notice_cta--text {
     background: transparent !important;
     border: 0 !important;
-    box-shadow: none;
+    box-shadow: none !important;
     color: inherit !important;
+    font: inherit;
+    font-weight: 600;
+    max-width: 100%;
+    overflow-wrap: anywhere;
     padding: 0 !important;
-    text-decoration: underline;
+    text-decoration-line: underline !important;
+    text-underline-offset: .18em;
+    white-space: normal;
+}
+.berocket_cart_notice_cta_layout a.berocket_cart_notice_cta.berocket_cart_notice_cta--text:hover {
+    text-decoration-thickness: .14em;
+}
+.berocket_cart_notice_cta_layout a.berocket_cart_notice_cta.berocket_cart_notice_cta--text:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 3px;
 }
 /* Extra specificity keeps these opt-in designs consistent in WC notice themes. */
 .berocket_cart_notice_cta_layout a.button.berocket_cart_notice_cta--preset {
@@ -172,11 +187,37 @@
     font-size: .9em;
     padding: 8px 12px;
 }
-.berocket_cart_notice_preset .berocket_cart_notice_cta_layout {
+.berocket_cart_notice_preset--graphite-gold {
+    background: #25272b;
+    border-inline-start: 4px solid #d8af55;
+    color: #f9f5e9;
+}
+.berocket_cart_notice_preset--festive-green {
+    background: #e1f4e8 linear-gradient(120deg, #e1f4e8, #f3fbf4);
+    border: 1px solid #72a88d;
+    border-radius: 12px;
+    color: #174735;
+    padding: 20px;
+}
+.berocket_cart_notice_preset--graphite-gold .berocket_cart_notice :is(h1, h2, h3, h4, h5, h6),
+.berocket_cart_notice_preset--festive-green .berocket_cart_notice :is(h1, h2, h3, h4, h5, h6) {
+    color: inherit;
+}
+.berocket_cart_notice_preset--graphite-gold .berocket_cart_notice a:not(.berocket_cart_notice_cta),
+.berocket_cart_notice_preset--festive-green .berocket_cart_notice a:not(.berocket_cart_notice_cta) {
+    color: inherit;
+    text-decoration: underline;
+}
+.berocket_cart_notice_preset .berocket_cart_notice_cta_layout,
+.berocket_cart_notice_cta_layout--text {
     flex-wrap: wrap;
 }
-.berocket_cart_notice_preset .berocket_cart_notice_cta_layout .berocket_cart_notice_content {
+.berocket_cart_notice_preset .berocket_cart_notice_cta_layout .berocket_cart_notice_content,
+.berocket_cart_notice_cta_layout--text .berocket_cart_notice_content {
     flex-basis: 180px;
+}
+.berocket_cart_notice_cta_layout--text .berocket_cart_notice_content {
+    overflow-wrap: anywhere;
 }
 .berocket_cart_notice_preset .berocket_cart_notice_cta {
     box-sizing: border-box;

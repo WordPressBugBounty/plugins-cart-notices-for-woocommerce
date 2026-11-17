@@ -392,3 +392,11 @@ msgstr ""
 #: main.php:811
 msgid "You can use shortcode to display notices"
 msgstr ""
+
+#: main.php:510
+msgid "Graphite with gold accent"
+msgstr ""
+
+#: main.php:511
+msgid "Festive green card"
+msgstr ""

@@ -1786,22 +1786,14 @@ if( ! class_exists( 'berocket_admin_notices_rate_stars' ) ) {
 		            $plugin = self::get_plugin_data( 1 );
 	            }
 
-	            $start_time = mktime(0, 0, 0, 4, 13, 2026);
-	            $end_time   = mktime(23, 59, 59, 4, 17, 2026);
-	            $c_notice   = berocket_admin_notices::get_notice_by_path(array(
-                    19,
-                    $end_time,
-                    $start_time,
-                    'spring_premium_days_2026'
-                ));
-	            $is_closed = false;
-	            if ( ! isset( $c_notice['closed'] ) or $c_notice['closed'] > 0 ) {
-		            $is_closed = true;
-	            }
+	            berocket_admin_notices::$subscribed =
+		            get_option('berocket_email_subscribed');
 
-                if ( ! $is_closed and time() >= $start_time and time() < $end_time ) {
-                    // do nothing
-                } else {
+	            $notices = berocket_admin_notices::get_notices_with_priority(
+		            get_option('berocket_admin_notices', [])
+	            );
+
+	            if ( empty($notices) ) {
 	                $banner = [ "get_it_now"              => __( 'Get it now', 'BeRocket_domain' ),
                                 "remove_banner"           => __( 'Remove banner', 'BeRocket_domain' ),
                                 "unlock_premium"          => __( 'Unlock Premium', 'BeRocket_domain' ),

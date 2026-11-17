@@ -3,17 +3,17 @@
  * Plugin Name: Cart Notices for WooCommerce
  * Plugin URI: https://wordpress.org/plugins/cart-notices-for-woocommerce/
  * Description: Display on cart page notices based on products and product categories in cart, cart cost, current day and time, customer referrer.
- * Version: 3.8
+ * Version: 3.9
  * Author: BeRocket
  * Requires at least: 5.0
- * Tested up to: 7.1.3
+ * Tested up to: 7.1.4
  * Requires PHP: 7.4
  * Requires Plugins: woocommerce
  * Author URI: https://berocket.com?utm_source=free_plugin&utm_medium=plugins&utm_campaign=cart_notices
  * Text Domain: cart-notices-for-woocommerce
  * Domain Path: /languages/
- * WC tested up to: 11.2.1
+ * WC tested up to: 11.3.0
  */
-define( "BeRocket_cart_notices_version", '3.8' );
+define( "BeRocket_cart_notices_version", '3.9' );
 define( "BeRocket_cart_notices_file", __FILE__ );
-include_once('main.php');
+include_once __DIR__ . '/main.php';

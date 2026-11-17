@@ -414,6 +414,10 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
         wp_nonce_field($this->post_name.'_check', $this->post_name.'_nonce');
         $options = $this->get_option( $post->ID );
         $BeRocket_cart_notices = BeRocket_cart_notices::getInstance();
+        $notice_styles = array(array('value' => '', 'text' => __('Default (WooCommerce)', 'cart-notices-for-woocommerce')));
+        foreach( BeRocket_cart_notices::get_notice_styles() as $style => $label ) {
+            $notice_styles[] = array('value' => $style, 'text' => $label);
+        }
         $product_categories = get_terms( 'product_cat' );
         $categories = array(array('value' => '', 'text' => ''));
         foreach($product_categories as $category) {
@@ -593,12 +597,7 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
                         'label' => __('Notice style', 'cart-notices-for-woocommerce'),
                         'name' => 'notice_style',
                         'value' => $options['notice_style'],
-                        'options' => array(
-                            array('value' => '', 'text' => __('Default (WooCommerce)', 'cart-notices-for-woocommerce')),
-                            array('value' => 'info', 'text' => __('Info strip', 'cart-notices-for-woocommerce')),
-                            array('value' => 'card', 'text' => __('Bordered card', 'cart-notices-for-woocommerce')),
-                            array('value' => 'hint', 'text' => __('Compact hint', 'cart-notices-for-woocommerce')),
-                        ),
+                        'options' => $notice_styles,
                         'label_for' => __('Applies only to this notice. Use WC notices mode keeps the WooCommerce design.', 'cart-notices-for-woocommerce'),
                     ),
                 ),
@@ -749,7 +748,7 @@ class BeRocket_cart_notice_custom_post extends BeRocket_custom_post_class {
     public function wc_save_product_without_check( $post_id, $post ) {
         if( ! empty($_POST[$this->post_name]) && is_array($_POST[$this->post_name]) ) {
             $notice_settings = &$_POST[$this->post_name];
-            $notice_settings['notice_style'] = (isset($notice_settings['notice_style']) && in_array($notice_settings['notice_style'], array('info', 'card', 'hint'), true) ? $notice_settings['notice_style'] : '');
+            $notice_settings['notice_style'] = BeRocket_cart_notices::normalize_notice_style($notice_settings['notice_style'] ?? '');
             $notice_settings['button_text'] = ( isset($notice_settings['button_text']) && is_scalar($notice_settings['button_text']) ? sanitize_text_field(wp_unslash($notice_settings['button_text'])) : '' );
             $notice_settings['button_subtitle'] = (isset($notice_settings['button_subtitle']) && is_scalar($notice_settings['button_subtitle']) ? sanitize_text_field(wp_unslash($notice_settings['button_subtitle'])) : '');
             $notice_settings['button_link'] = ( isset($notice_settings['button_link']) && is_scalar($notice_settings['button_link']) ? esc_url_raw(wp_unslash($notice_settings['button_link'])) : '' );

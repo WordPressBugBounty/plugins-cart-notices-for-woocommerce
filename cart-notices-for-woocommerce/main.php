@@ -502,12 +502,24 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         }
         return $return_result;
     }
+    public static function get_notice_styles() {
+        return array(
+            'info' => __('Info strip', 'cart-notices-for-woocommerce'),
+            'card' => __('Bordered card', 'cart-notices-for-woocommerce'),
+            'hint' => __('Compact hint', 'cart-notices-for-woocommerce'),
+            'graphite-gold' => __('Graphite with gold accent', 'cart-notices-for-woocommerce'),
+            'festive-green' => __('Festive green card', 'cart-notices-for-woocommerce'),
+        );
+    }
+    public static function normalize_notice_style($style) {
+        return (is_string($style) && $style !== '' && isset(self::get_notice_styles()[$style]) ? $style : '');
+    }
     public function print_notice($notice_id, $notice, $shortcode = false) {
         $options = $this->get_option();
         // Paid per-product notices use keys such as noticeID_productID.
         $settings = get_post_meta(absint($notice_id), 'br_notice', true);
-        $style = (is_array($settings) && isset($settings['notice_style']) ? $settings['notice_style'] : '');
-        if( empty($options['use_wc_notices']) && in_array($style, array('info', 'card', 'hint'), true) ) {
+        $style = self::normalize_notice_style(is_array($settings) ? ($settings['notice_style'] ?? '') : '');
+        if( empty($options['use_wc_notices']) && $style !== '' ) {
             $classes = 'berocket_cart_notice berocket_cart_notice_'.$notice_id;
             if( $shortcode ) { $classes .= ' berocket_cart_notice_shortcode_notice'; }
             $allowed = array_replace_recursive(wp_kses_allowed_html('post'), array(
@@ -556,7 +568,7 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         global $berocket_cart_notice_add_notice;
         if( empty($berocket_cart_notice_add_notice) ) {
             $func = 'jQuery(".berocket_cart_notice").each(function() {
-                jQuery(this).parent().remove();
+                berocket_cart_notice_get_container(jQuery(this)).remove();
             });';
         } else {
             $func = 'jQuery(".berocket_cart_notice").each(function() {
@@ -565,11 +577,18 @@ class BeRocket_cart_notices extends BeRocket_Framework {
                 notice_class = "."+notice_class.join(".");
                 if( jQuery(notice_class).length > 1 ) {
                     jQuery(notice_class).first().addClass("berocket_cart_notice_main");
-                    jQuery(notice_class+":not(.berocket_cart_notice_main)").parent().remove();
+                    berocket_cart_notice_get_container(jQuery(notice_class+":not(.berocket_cart_notice_main)")).remove();
                 }
             });';
         }
         echo '<script>
+        function berocket_cart_notice_get_container(notices) {
+            return notices.map(function() {
+                var notice = jQuery(this);
+                var container = notice.closest(".woocommerce-info, .woocommerce-message, .woocommerce-error, .wc-block-components-notice-banner");
+                return container.length ? container[0] : notice.parent()[0];
+            });
+        }
         function berocket_notice_fix_error_duplicate() {
             berocket_cart_notice_shortcode_fix_before();
             ' . apply_filters('BeRocket_cart_notice_function_to_remove_duplicates', $func, $berocket_cart_notice_add_notice) . '
@@ -586,13 +605,13 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         function berocket_cart_notice_shortcode_fix_before() {
             if( jQuery(".berocket_cart_notice_shortcode").length && jQuery(".berocket_cart_notice:not(.berocket_cart_notice_shortcode_notice)").length ) {
                 jQuery(".berocket_cart_notice_shortcode_notice").each(function() {
-                    jQuery(this).parent().remove();
+                    berocket_cart_notice_get_container(jQuery(this)).remove();
                 });
             }
         }
         function berocket_cart_notice_shortcode_fix_after() {
             if( jQuery(".berocket_cart_notice_shortcode").length && jQuery(".berocket_cart_notice").length ) {
-                var matched_elements = jQuery(".berocket_cart_notice:not(.berocket_cart_notice_shortcode_notice)").parent();
+                var matched_elements = berocket_cart_notice_get_container(jQuery(".berocket_cart_notice:not(.berocket_cart_notice_shortcode_notice)"));
                 if( ! matched_elements.length ) {
                     return;
                 }
@@ -809,10 +828,11 @@ class BeRocket_cart_notices extends BeRocket_Framework {
             return $content;
         }
 
-        $classes = array('button', 'berocket_cart_notice_cta');
-        if( isset($settings['button_style']) && in_array($settings['button_style'], array('outline', 'text', 'gradient', 'pill', 'soft', 'compact-solid', 'compact-outline', 'compact-pill'), true) ) {
-            $classes[] = 'berocket_cart_notice_cta--'.$settings['button_style'];
-            if( ! in_array($settings['button_style'], array('outline', 'text'), true) ) {
+        $style = $settings['button_style'] ?? '';
+        $classes = ( $style === 'text' ? array('berocket_cart_notice_cta') : array('button', 'berocket_cart_notice_cta') );
+        if( in_array($style, array('outline', 'text', 'gradient', 'pill', 'soft', 'compact-solid', 'compact-outline', 'compact-pill'), true) ) {
+            $classes[] = 'berocket_cart_notice_cta--'.$style;
+            if( ! in_array($style, array('outline', 'text'), true) ) {
                 $classes[] = 'berocket_cart_notice_cta--preset';
             }
         }
@@ -822,6 +842,9 @@ class BeRocket_cart_notices extends BeRocket_Framework {
         }
         $target = ( isset($settings['button_target']) && $settings['button_target'] === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '' );
         $layout_class = 'berocket_cart_notice_cta_layout'.( $is_full_width ? ' berocket_cart_notice_cta_layout--full' : '' );
+        if( $style === 'text' ) {
+            $layout_class .= ' berocket_cart_notice_cta_layout--text';
+        }
 
         $cta = '<a class="'.esc_attr(implode(' ', $classes)).'" href="'.$url.'"'.$target.'>'.esc_html($text).'</a>';
         $subtitle = (isset($settings['button_subtitle']) && is_scalar($settings['button_subtitle']) ? sanitize_text_field($settings['button_subtitle']) : '');

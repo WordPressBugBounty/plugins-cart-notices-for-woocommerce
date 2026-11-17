@@ -28,13 +28,21 @@ jQuery(function($) {
         return;
     }
 
+    // Block themes wrap the message in a content div inside the visible banner.
+    function noticeContainers(notices) {
+        return notices.map(function() {
+            var notice = $(this);
+            var container = notice.closest('.woocommerce-info, .woocommerce-message, .woocommerce-error, .wc-block-components-notice-banner');
+            return container.length ? container[0] : notice.parent()[0];
+        });
+    }
     function prepareAutomaticContainer() {
         if (!window.brCartNoticeAutomatic || $(automaticSelector).length) {
             return;
         }
-        var notices = $('.berocket_cart_notice').filter(function() {
+        var notices = noticeContainers($('.berocket_cart_notice').filter(function() {
             return !$(this).closest(shortcodeSelector).length;
-        }).parent();
+        }));
         var container = $('<div class="woocommerce berocket_cart_notice_auto"></div>');
         if (notices.length) {
             container.insertBefore(notices.first()).append(notices);
@@ -48,9 +56,9 @@ jQuery(function($) {
         if (!$(automaticSelector).length) {
             return;
         }
-        $('.berocket_cart_notice').filter(function() {
+        noticeContainers($('.berocket_cart_notice').filter(function() {
             return !$(this).closest(automaticSelector + ', ' + shortcodeSelector).length;
-        }).parent().remove();
+        })).remove();
     }
 
     prepareAutomaticContainer();

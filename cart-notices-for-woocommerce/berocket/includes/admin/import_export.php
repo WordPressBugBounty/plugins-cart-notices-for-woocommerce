@@ -354,7 +354,7 @@ class BeRocket_import_export {
         if( $plugin_instance != FALSE && $plugin_instance->import_export !== FALSE ) {
             $current_option = $plugin_instance->get_option();
             $default_option = $plugin_instance->defaults;
-            $export = self::check_settings_remove($current_option, $default_option);
+            $export = self::check_settings_remove($current_option, $default_option, $plugin_instance->import_export);
             $export = self::type_check_export($export, $plugin_instance->import_export, $current_option);
             return $export;
         }
@@ -369,7 +369,7 @@ class BeRocket_import_export {
             $posts = $post_instance->get_custom_posts();
             foreach($posts as $post_id) {
                 $current_option = $post_instance->get_option($post_id);
-                $post_export = self::check_settings_remove($current_option, $default_option);
+                $post_export = self::check_settings_remove($current_option, $default_option, $post_instance->import_export);
                 $post_export = self::type_check_export($post_export, $post_instance->import_export, $current_option);
                 $post_parent = (int) get_post_field('post_parent', $post_id);
                 $post_export['brfr_import_slug'] = get_post_field('post_name', $post_id);
@@ -1051,7 +1051,7 @@ class BeRocket_import_export {
         }
         return $default;
     }
-    public static function check_settings_remove($option, $default) {
+    public static function check_settings_remove($option, $default, $types = array()) {
         $new_option = array();
         if( is_array($option) && is_array($default) ) {
             foreach( $option as $key => $value ) {
@@ -1071,9 +1071,37 @@ class BeRocket_import_export {
         } else {
             $new_option = $option;
         }
-        return $new_option;
+        return self::preserve_export_defaults($new_option, $option, $types, $option);
     }
-    
+    /** Restore complete declared fields after removing values equal to defaults. */
+    protected static function preserve_export_defaults($export, $options, $types, $context_options) {
+        if( ! is_array($export) || ! is_array($options) || ! is_array($types) ) {
+            return $export;
+        }
+        foreach($types as $schema_key => $type) {
+            if( ! is_array($type) ) {
+                continue;
+            }
+            foreach(self::get_matching_setting_keys($options, $schema_key) as $key) {
+                $resolved_type = self::resolve_type_config($type, $key, $options, 'export', $context_options);
+                if( ! empty($resolved_type['preserve_defaults']) ) {
+                    $export[$key] = $options[$key];
+                } elseif( ! isset($resolved_type['export_type']) && is_array($options[$key]) ) {
+                    $nested = self::preserve_export_defaults(
+                        isset($export[$key]) ? $export[$key] : array(),
+                        $options[$key],
+                        $resolved_type,
+                        $context_options
+                    );
+                    if( ! empty($nested) ) {
+                        $export[$key] = $nested;
+                    }
+                }
+            }
+        }
+        return $export;
+    }
+
     public static function type_check_export($options, $types = array(), $context_options = false) {
         if( ! is_array($options) || ! is_array($types) ) {
             return $options;
@@ -1088,6 +1116,7 @@ class BeRocket_import_export {
             foreach(self::get_matching_setting_keys($options, $schema_key) as $key) {
                 $resolved_type = self::resolve_type_config($type, $key, $options, 'export', $context_options);
                 if( isset($resolved_type['export_type']) ) {
+                    $original_value = $options[$key];
                     switch($resolved_type['export_type']) {
                         case 'remove':
                             unset($options[$key]);
@@ -1103,6 +1132,20 @@ class BeRocket_import_export {
                                 'declaration' => $resolved_type,
                             ));
                             break;
+                    }
+                    if( array_key_exists($key, $options) ) {
+                        $options[$key] = apply_filters(
+                            'brfr_export_type_' . $resolved_type['export_type'],
+                            $options[$key],
+                            array(
+                                'direction'      => 'export',
+                                'setting_key'    => $key,
+                                'settings'       => $context_options,
+                                'local_settings' => $options,
+                                'declaration'    => $resolved_type,
+                                'original_value' => $original_value,
+                            )
+                        );
                     }
                 } else {
                     $options[$key] = self::type_check_export($options[$key], $resolved_type, $context_options);
@@ -1125,6 +1168,7 @@ class BeRocket_import_export {
             foreach(self::get_matching_setting_keys($options, $schema_key) as $key) {
                 $resolved_type = self::resolve_type_config($type, $key, $options, 'import', $context_options);
                 if( isset($resolved_type['export_type']) ) {
+                    $original_value = $options[$key];
                     switch($resolved_type['export_type']) {
                         case 'post':
                         case 'taxonomy':
@@ -1137,6 +1181,20 @@ class BeRocket_import_export {
                                 'declaration' => $resolved_type,
                             ));
                             break;
+                    }
+                    if( array_key_exists($key, $options) ) {
+                        $options[$key] = apply_filters(
+                            'brfr_import_type_' . $resolved_type['export_type'],
+                            $options[$key],
+                            array(
+                                'direction'      => 'import',
+                                'setting_key'    => $key,
+                                'settings'       => $context_options,
+                                'local_settings' => $options,
+                                'declaration'    => $resolved_type,
+                                'original_value' => $original_value,
+                            )
+                        );
                     }
                 } else {
                     $options[$key] = self::type_check_import($options[$key], $resolved_type, $context_options);

@@ -4,8 +4,8 @@ Contributors: berocket, dholovnia
 Donate link: https://berocket.com/?utm_source=wordpress_org&utm_medium=donate&utm_campaign=cart_notices
 Tags: cart notice, checkout notice, cart ad, cart message, cart alerts
 Requires at least: 5.0
-Tested up to: 7.1.3
-Stable tag: 3.8
+Tested up to: 7.1.4
+Stable tag: 3.9
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -92,6 +92,14 @@ You can try this plugin's admin side [here](https://berocket.com/product/woocomm
 ---
 
 == Changelog ==
+
+= 3.9 =
+* Feature - Added Graphite with gold accent and Festive green card notice styles.
+* Enhancement - Refined Text link actions with keyboard focus and responsive wrapping.
+* Fix - Removed duplicate notice banners correctly in block themes.
+* Fix - Load the plugin reliably using its own directory.
+* Fix - Suppressed product links when no premium product destination is configured in BeRocket Framework 3.1.5.
+* Enhancement - Removed an unused Windows-only dependency from Divi 5 module builds.
 
 = 3.8 =
 * Feature - Added three cart notice styles and six CTA button designs with compact variants.

@@ -1238,6 +1238,9 @@ if ( ! class_exists( 'BeRocket_updater' ) ) {
         }
 
         public static function woocommerce_addons_sections($sections) {
+            if( ! is_array($sections) ) {
+                $sections = array();
+            }
             $sections[] = (object)array(
                 'slug' => 'berocket',
                 'label' => 'BeRocket'
